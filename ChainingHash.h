@@ -6,6 +6,7 @@
 #define __CHAINING_HASH_H
 
 // Standard library includes
+#include <algorithm>
 #include <iostream>
 #include <vector>
 #include <list>
@@ -15,6 +16,7 @@
 #include "Hash.h"
 
 // Namespaces to include
+using namespace std;
 using std::list;
 using std::pair;
 using std::vector;
@@ -30,8 +32,8 @@ class ChainingHash : public Hash<K, V>
 {
 private:
     vector<list<pair<K, V>>> table;
-    int currentSize = 0;
-    int bucketCount;
+    int currentSize = 0; // number of elements total in the hash
+    int bucketCount;     // number of linked lists off the table "table size"
 
 public:
     ChainingHash(int n = 11)
@@ -52,13 +54,55 @@ public:
 
     V operator[](const K &key)
     {
+        typename list<std::pair<K, V>>::iterator itr;
+        for (itr = table[key].begin(); itr != table[key].end(); itr++)
+        {
+            std::pair<K, V> keyValuePair = *itr;
+            if (keyValuePair.first == key)
+            {
+                return keyValuePair.second;
+            }
+        }
         return -1;
     }
 
     bool insert(const std::pair<K, V> &pair)
     {
-        int index = hashFunction(pair.first);
-        table->return false;
+        list<std::pair<K, V>> &whichList = table[pair.first];
+        // Duplicate Check
+        if (find(whichList.begin(), whichList.end(), pair) != whichList.end())
+            return false;
+
+        whichList.push_back(pair);
+
+        ++currentSize;
+
+        // Rehash
+        if (load_factor() >= 0.75f)
+            rehash();
+
+        return true;
+    }
+
+    void rehash()
+    {
+        vector<list<pair<K, V>>> oldLists = table;
+
+        table.resize(findNextPrime(2 * table.size()));
+        bucketCount = table.size();
+        for (int j = 0; j < table.size(); j++)
+            table[j].clear();
+
+        // copy table over
+        currentSize = 0;
+        for (int i = 0; i < oldLists.size(); i++)
+        {
+            typename list<pair<K, V>>::iterator itr = oldLists[i].begin();
+            while (itr != oldLists[i].end())
+                insert(*itr++);
+            // for (typenalist<std::pair<K, V>>::iterator itr = oldLists[i].begin(); itr != oldLists[i].end(); ++itr)
+            //     insert(*itr);
+        }
     }
 
     int hashFunction(int x)
@@ -68,10 +112,23 @@ public:
 
     void erase(const K &key)
     {
+        typename list<std::pair<K, V>>::iterator itr;
+        for (itr = table[key].begin(); itr != table[key].end(); itr++)
+        {
+            std::pair<K, V> keyValuePair = *itr;
+            if (keyValuePair.first == key)
+            {
+                keyValuePair.first = NULL;
+            }
+        }
     }
 
     void clear()
     {
+        for (int i = 0; i < table.size(); i++)
+        {
+            table[i].clear();
+        }
     }
 
     int bucket_count()
@@ -81,7 +138,7 @@ public:
 
     float load_factor()
     {
-        return 0.75f;
+        return (float)currentSize / (float)bucketCount;
     }
 
 private:

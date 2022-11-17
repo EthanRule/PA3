@@ -15,12 +15,14 @@ void testHash(Hash<int, int> *hash, std::ofstream &myfile)
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
     for (int i = 0; i < 100000; ++i)
     {
+        cout << i << endl;
         assert(hash->insert(std::make_pair(i, i)));
     }
     std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
     myfile << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[ms]" << std::endl;
 
     begin = std::chrono::steady_clock::now();
+    cout << (*hash)[1] << endl;
     assert((*hash)[97] == 97);
     end = std::chrono::steady_clock::now();
     myfile << "Time difference = " << std::chrono::duration_cast<std::chrono::microseconds>(end - begin).count() << "[ms]" << std::endl;
@@ -47,6 +49,8 @@ int main(int argc, char *argv[])
     ChainingHash<int, int> cHash(101);
     ProbingHash<int, int> pHash(101);
     testHash(&cHash, myfile);
+    cout << "finished" << endl;
     testHash(&pHash, myfile);
+    cout << "finished" << endl;
     myfile.close();
 }
